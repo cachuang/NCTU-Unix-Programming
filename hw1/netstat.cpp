@@ -13,10 +13,17 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <regex.h>
 
 #define MAXLINE 1024
 
 using namespace std;
+
+bool tcp_flag = false;
+bool udp_flag = false;
+bool filter_flag = false;
+bool invalid_flag = false;
+string filter_string;
 
 void printUsage()
 {
@@ -26,6 +33,30 @@ void printUsage()
 bool isNumber(const string& str) 
 {
 	return str.find_first_not_of("0123456789") == string::npos;
+}
+
+bool matchRegex(const string& str, const string& pattern)
+{
+	regex_t regex;
+	int reti;
+	char error[MAXLINE];
+
+	if(regcomp(&regex, pattern.c_str(), REG_EXTENDED) != 0)
+		fprintf(stderr, "Compile regex fail\n");
+
+	reti = regexec(&regex, str.c_str(), 0, NULL, 0);
+	if (!reti) {
+		return true;
+	}
+	else if (reti == REG_NOMATCH){
+		return false;
+	}
+	else {
+		regerror(reti, &regex, error, sizeof(error));
+		fprintf(stderr, "Regex match failed: %s\n", error);
+	}
+
+	regfree(&regex);
 }
 
 string ipv6_hex_to_string(string ip_hex)
@@ -183,7 +214,8 @@ void printIpv4Connection(const string& type)
 		    string process = getProcessNameByPid(pid);
 		    string cmdline = getCmdlineByPid(pid);
 
-	        printf("%-5s %-25s %-25s %s/%s%s\n", type.c_str(), src_ip_port, dst_ip_port, pid.c_str(), process.c_str(), cmdline.c_str()); 
+		    if((filter_flag && matchRegex(process+cmdline, filter_string)) || !filter_flag)
+	        	printf("%-5s %-25s %-25s %s/%s%s\n", type.c_str(), src_ip_port, dst_ip_port, pid.c_str(), process.c_str(), cmdline.c_str()); 
 	    }
 	}
 	else
@@ -236,7 +268,8 @@ void printIpv6Connection(const string& type)
 		    string process = getProcessNameByPid(pid);
 		    string cmdline = getCmdlineByPid(pid);
 
-	        printf("%-5s %-25s %-25s %s/%s%s\n", v6_type.c_str(), src_ip_port, dst_ip_port, pid.c_str(), process.c_str(), cmdline.c_str()); 
+			if((filter_flag && matchRegex(cmdline, filter_string)) || !filter_flag)
+	        	printf("%-5s %-25s %-25s %s/%s%s\n", v6_type.c_str(), src_ip_port, dst_ip_port, pid.c_str(), process.c_str(), cmdline.c_str()); 
 	    }
 	}
 	else
@@ -259,14 +292,10 @@ int main(int argc, char *argv[])
 		{ "udp", 0, NULL, 'u' },  
 		{ 0, 0, 0, 0 },  
 	}; 
-	bool tcp_flag = false;
-	bool udp_flag = false;
-	bool invalid_flag = false;
 
 	// no argument is passed
-	if(argc == 1) {
-		tcp_flag = true;
-		udp_flag = true;
+	if(argc == 1 || (argc == 2 && argv[optind] != NULL)) {
+		tcp_flag = udp_flag = true;
 	}
 
 	while ((option = getopt_long(argc, argv, short_options, long_options, NULL)) != -1) 
@@ -288,6 +317,10 @@ int main(int argc, char *argv[])
 	if(invalid_flag) {
 		printUsage();
 		return 0;
+	}
+	if(argv[optind] != NULL) {
+		filter_flag = true;
+		filter_string = string(argv[optind]);
 	}
 	if(tcp_flag) {
 		printf("List of TCP connections:\n");
