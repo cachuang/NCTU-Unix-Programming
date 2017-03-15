@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+
 #include <stdio.h>  
 #include <stdlib.h>
 #include <string.h>
@@ -10,10 +11,12 @@
 #include <getopt.h> 
 #include <fcntl.h> 
 #include <errno.h>
+#include <regex.h>
+#include <sys/stat.h>
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <regex.h>
 
 #define MAXLINE 1024
 
@@ -35,28 +38,30 @@ bool isNumber(const string& str)
 	return str.find_first_not_of("0123456789") == string::npos;
 }
 
-bool matchRegex(const string& str, const string& pattern)
+bool matchRegex(const string& target, const string& pattern)
 {
 	regex_t regex;
-	int reti;
-	char error[MAXLINE];
+	int status;
+	bool result = false;
 
-	if(regcomp(&regex, pattern.c_str(), REG_EXTENDED) != 0)
-		fprintf(stderr, "Compile regex fail\n");
-
-	reti = regexec(&regex, str.c_str(), 0, NULL, 0);
-	if (!reti) {
-		return true;
+	if(regcomp(&regex, pattern.c_str(), REG_NOSUB | REG_EXTENDED) != 0) {
+		// Compile regex failed
+		result = false;
 	}
-	else if (reti == REG_NOMATCH){
-		return false;
+	status = regexec(&regex, target.c_str(), 0, NULL, 0);
+
+	if (status == 0) {
+		// Match
+		result = true;
 	}
 	else {
-		regerror(reti, &regex, error, sizeof(error));
-		fprintf(stderr, "Regex match failed: %s\n", error);
+		// Not match or regexec() failed 
+		result = false;
 	}
 
 	regfree(&regex);
+
+	return result;
 }
 
 string ipv6_hex_to_string(string ip_hex)
@@ -113,15 +118,15 @@ string getCmdlineByPid(const string& pid)
 	string delimiter = getProcessNameByPid(pid);
 	int pos;
 
-	// strip process name if argument already contain process name
+	// strip process path
 	if((pos = cmdline.find(delimiter)) != string::npos) {
-		cmdline.erase(0, pos + delimiter.length());
+		cmdline.erase(0, pos);
 	}
 
 	return cmdline;
 }
 
-string getPidByInode(const string& inode)
+string getPidByInode(const char* inode)
 {
 	DIR *proc_dir = opendir("/proc");
   	struct dirent *entry;  
@@ -130,7 +135,7 @@ string getPidByInode(const string& inode)
   	{
 	    while (entry = readdir(proc_dir))
 	    {
-		  	if(isNumber(entry->d_name))
+		  	if (isNumber(entry->d_name))
 		  	{
 		  		DIR *fd_dir;    
 			  	string pid(entry->d_name);
@@ -147,11 +152,16 @@ string getPidByInode(const string& inode)
 			  			char line[MAXLINE] = {0};
 			  			string file(entry->d_name);
 			  			string path = "/proc/" + pid + "/fd/" + file;
+			  			struct stat file_status;
 
-			  			// check if link contain target inode
-			  			if (readlink(path.c_str(), line, sizeof(line)) != -1) {
-			  				if (strstr(line, inode.c_str()) != NULL)
-			  					return pid;
+			  			stat(path.c_str(), &file_status);
+
+			  			// check if socket's inode equals to target inode
+			  			if(S_ISSOCK(file_status.st_mode)) {
+				  			if (readlink(path.c_str(), line, sizeof(line)) != -1) {
+				  				if (strstr(line, inode) != NULL)
+				  					return pid;
+				  			}
 			  			}
 			  		}
 			  	}
@@ -183,42 +193,36 @@ void printIpv4Connection(const string& type)
 
 	if(fp) 
 	{
-	    char line[MAXLINE];
-	    char src_ip_hex[9], src_port_hex[5], dst_ip_hex[9], dst_port_hex[5];
+	    unsigned int src_ip_hex, src_port_hex, dst_ip_hex, dst_port_hex;
+	    char src_ip[INET_ADDRSTRLEN], dst_ip[INET_ADDRSTRLEN];
 	    char src_ip_port[22], dst_ip_port[22];
-	    char inode[20];
-	    unsigned int ip[4];
-	    unsigned int port;
+	    char line[MAXLINE];
+	    char inode[MAXLINE];
 
-	    // ignore first line
+	    // Ignore first line
 	    fgets(line, sizeof(line), fp);
 
-	    while(fscanf(fp, "%*s %[^:]:%s%[^:]:%s%*s%*s%*s%*s%*s%*s%s%*[^\n]\n" \
-	   	, src_ip_hex, src_port_hex, dst_ip_hex, dst_port_hex, inode) != -1) 
-	   	{
-			sscanf(src_ip_hex, "%2x%2x%2x%2x", &ip[0], &ip[1], &ip[2], &ip[3]);
-			sscanf(src_port_hex, "%4x", &port);
-		    snprintf(src_ip_port, sizeof(src_ip_port), "%u.%u.%u.%u:%u", ip[3], ip[2], ip[1], ip[0], port);
+	    while(fscanf(fp, "%*s%x:%x%x:%x%*s%*s%*s%*s%*s%*s%s%*[^\n]\n" \
+	   	      , &src_ip_hex, &src_port_hex, &dst_ip_hex, &dst_port_hex, inode) != -1) 
+	    {
+			inet_ntop(AF_INET, &src_ip_hex, src_ip, sizeof(src_ip));
+		    snprintf(src_ip_port, sizeof(src_ip_port), "%s:%d", src_ip, src_port_hex);
 
-			sscanf(dst_ip_hex, "%2x%2x%2x%2x", &ip[0], &ip[1], &ip[2], &ip[3]);
-			sscanf(dst_port_hex, "%4x", &port);
-
-			// if port = 0, print "*" instead of 0
-			if(port == 0)
-				snprintf(dst_ip_port, sizeof(dst_ip_port), "%u.%u.%u.%u:*", ip[0], ip[1], ip[2], ip[3]);
+			inet_ntop(AF_INET, &dst_ip_hex, dst_ip, sizeof(dst_ip));
+			// If destination port = 0, print "*" instead of 0
+			if(dst_port_hex == 0)
+		    	snprintf(dst_ip_port, sizeof(dst_ip_port), "%s:*", dst_ip);
 			else
-				snprintf(dst_ip_port, sizeof(dst_ip_port), "%u.%u.%u.%u:%u", ip[3], ip[2], ip[1], ip[0], port);
+		    	snprintf(dst_ip_port, sizeof(dst_ip_port), "%s:%d", dst_ip, dst_port_hex);
 
-		    string inode_str(inode);
-		    string pid = getPidByInode(inode_str);
-		    string process = getProcessNameByPid(pid);
+		    string pid = getPidByInode(inode);
 		    string cmdline = getCmdlineByPid(pid);
 
-		    if((filter_flag && matchRegex(process+cmdline, filter_string)) || !filter_flag)
-	        	printf("%-5s %-25s %-25s %s/%s%s\n", type.c_str(), src_ip_port, dst_ip_port, pid.c_str(), process.c_str(), cmdline.c_str()); 
+		    if(!filter_flag || (filter_flag && matchRegex(cmdline, filter_string)))
+	        	printf("%-5s %-25s %-25s %s/%s\n", type.c_str(), src_ip_port, dst_ip_port, pid.c_str(), cmdline.c_str()); 
 	    }
 	}
-	else
+	else 
 	{
 		char error[MAXLINE];
    		snprintf(error, sizeof(error), "Failed to open /proc/net/%s", type.c_str());
@@ -263,13 +267,11 @@ void printIpv6Connection(const string& type)
 			else
 				snprintf(dst_ip_port, sizeof(dst_ip_port), "%s:%u", dst_ip.c_str(), port);
 
-		    string inode_str(inode);
-		    string pid = getPidByInode(inode_str);
-		    string process = getProcessNameByPid(pid);
+		    string pid = getPidByInode(inode);
 		    string cmdline = getCmdlineByPid(pid);
 
-			if((filter_flag && matchRegex(cmdline, filter_string)) || !filter_flag)
-	        	printf("%-5s %-25s %-25s %s/%s%s\n", v6_type.c_str(), src_ip_port, dst_ip_port, pid.c_str(), process.c_str(), cmdline.c_str()); 
+		    if(!filter_flag || (filter_flag && matchRegex(cmdline, filter_string)))
+	        	printf("%-5s %-25s %-25s %s/%s\n", v6_type.c_str(), src_ip_port, dst_ip_port, pid.c_str(), cmdline.c_str()); 
 	    }
 	}
 	else
@@ -293,11 +295,6 @@ int main(int argc, char *argv[])
 		{ 0, 0, 0, 0 },  
 	}; 
 
-	// no argument is passed
-	if(argc == 1 || (argc == 2 && argv[optind] != NULL)) {
-		tcp_flag = udp_flag = true;
-	}
-
 	while ((option = getopt_long(argc, argv, short_options, long_options, NULL)) != -1) 
 	{  
 		switch (option) 
@@ -311,25 +308,39 @@ int main(int argc, char *argv[])
 			case '?':  
 				invalid_flag = true;
 				break;  
-		}  
+		} 
+
+		if(invalid_flag) 
+			break; 
 	}
 
-	if(invalid_flag) {
+	// no argument or only filter string is passed
+	if (argc == 1 || (argc == 2 && argv[optind] != NULL)) {
+		tcp_flag = udp_flag = true;
+	}
+	// filter string more than one
+	if (optind < argc-1 && !invalid_flag) {
+		printf("%s: Too many arguments\n", argv[0]);
 		printUsage();
 		return 0;
 	}
-	if(argv[optind] != NULL) {
+
+	if (invalid_flag) {
+		printUsage();
+		return 0;
+	}
+	if (argv[optind] != NULL) {
 		filter_flag = true;
 		filter_string = string(argv[optind]);
 	}
-	if(tcp_flag) {
+	if (tcp_flag) {
 		printf("List of TCP connections:\n");
 		printf("%-5s %-25s %-25s %-10s\n", "Proto", "Local Address", "Foreign Address", "PID/Program name and arguments");
 		printIpv4Connection("tcp");
 		printIpv6Connection("tcp");
 		printf("\n");
 	}
-	if(udp_flag) {
+	if (udp_flag) {
 		printf("List of UDP connections:\n");
 		printf("%-5s %-25s %-25s %-10s\n", "Proto", "Local Address", "Foreign Address", "PID/Program name and arguments");
 		printIpv4Connection("udp");
