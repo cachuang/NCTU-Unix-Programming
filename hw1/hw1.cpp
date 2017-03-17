@@ -110,18 +110,17 @@ string getCmdlineByPid(const string& pid)
 
 	for (char *p = buffer; p < end;) {
 		string temp = string(p);
-		cmdline = cmdline + " " + temp;
+		int pos;
+		// strip path of the process name
+		if(p == buffer) {
+			if((pos = temp.find_last_of("/")) != string::npos) {
+				temp.erase(0, pos+1);
+			}
+		}
+		cmdline = cmdline + temp + " ";
 	  	while (*p++); 
 	}
 	close(fd);
-
-	string delimiter = getProcessNameByPid(pid);
-	int pos;
-
-	// strip process path
-	if((pos = cmdline.find(delimiter)) != string::npos) {
-		cmdline.erase(0, pos);
-	}
 
 	return cmdline;
 }
