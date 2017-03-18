@@ -101,26 +101,23 @@ string getProcessNameByPid(const string& pid)
 string getCmdlineByPid(const string& pid)
 {
 	string path = "/proc/" + pid + "/cmdline"; 
-	string cmdline; 
+	string cmdline, arguments;
+	fstream file;
+	int pos;
 
-	char buffer[MAXLINE]; 
-	int fd = open(path.c_str(), O_RDONLY);
-	int nbytesread = read(fd, buffer, MAXLINE);
-    char *end = buffer + nbytesread;
+	file.open(path.c_str(), ios::in);
 
-	for (char *p = buffer; p < end;) {
-		string temp = string(p);
-		int pos;
-		// strip path of the process name
-		if(p == buffer) {
-			if((pos = temp.find_last_of("/")) != string::npos) {
-				temp.erase(0, pos+1);
-			}
-		}
-		cmdline = cmdline + temp + " ";
-	  	while (*p++); 
-	}
-	close(fd);
+	if (file) {
+		// strip the path of process
+		getline(file, cmdline, '\0');
+		if((pos = cmdline.find_last_of("/")) != string::npos) 
+			cmdline.erase(0, pos+1);
+
+		while(getline(file, arguments, '\0'))
+			cmdline += " " + arguments;
+	} 
+
+	file.close();
 
 	return cmdline;
 }
