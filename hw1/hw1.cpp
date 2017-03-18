@@ -2,14 +2,12 @@
 #include <fstream>
 #include <string>
 
-#include <stdio.h>  
+#include <stdio.h> 
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <ctype.h>
 #include <dirent.h>
 #include <getopt.h> 
-#include <fcntl.h> 
 #include <errno.h>
 #include <regex.h>
 #include <sys/stat.h>
@@ -44,7 +42,7 @@ bool matchRegex(const string& target, const string& pattern)
 	int status;
 	bool result = false;
 
-	if(regcomp(&regex, pattern.c_str(), REG_NOSUB | REG_EXTENDED) != 0) {
+	if (regcomp(&regex, pattern.c_str(), REG_NOSUB | REG_EXTENDED) != 0) {
 		// Compile regex failed
 		result = false;
 	}
@@ -67,7 +65,7 @@ bool matchRegex(const string& target, const string& pattern)
 string ipv6_hex_to_string(string ip_hex)
 {
 	struct in6_addr tmp_ip;
-	char ip_str[128] = {0};
+	char ip_str[INET6_ADDRSTRLEN] = {0};
 
 	if (sscanf(ip_hex.c_str(),
 		"%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx",
@@ -82,22 +80,6 @@ string ipv6_hex_to_string(string ip_hex)
 	return string(ip_str);
 }
 
-string getProcessNameByPid(const string& pid)
-{
-  	string name;
-	string path = "/proc/" + pid + "/comm";  
-  	fstream file;
-
-  	file.open(path.c_str(), ios::in);
-
-  	if (file) 
-  		file >> name;
-
-	file.close();
-
-	return name;
-}
-
 string getCmdlineByPid(const string& pid)
 {
 	string path = "/proc/" + pid + "/cmdline"; 
@@ -107,8 +89,10 @@ string getCmdlineByPid(const string& pid)
 
 	file.open(path.c_str(), ios::in);
 
-	if (file) {
-		// strip the path of process
+	if (file) 
+	{
+		// The first one is the process's name with its path
+		// Strip the path
 		getline(file, cmdline, '\0');
 		if((pos = cmdline.find_last_of("/")) != string::npos) 
 			cmdline.erase(0, pos+1);
@@ -152,7 +136,7 @@ string getPidByInode(const char* inode)
 
 			  			stat(path.c_str(), &file_status);
 
-			  			// check if socket's inode equals to target inode
+			  			// Check if socket's inode equals to target inode
 			  			if(S_ISSOCK(file_status.st_mode)) {
 				  			if (readlink(path.c_str(), line, sizeof(line)) != -1) {
 				  				if (strstr(line, inode) != NULL)
@@ -198,15 +182,15 @@ void printIpv4Connection(const string& type)
 	    // Ignore first line
 	    fgets(line, sizeof(line), fp);
 
-	    while(fscanf(fp, "%*s%x:%x%x:%x%*s%*s%*s%*s%*s%*s%s%*[^\n]\n" \
-	   	      , &src_ip_hex, &src_port_hex, &dst_ip_hex, &dst_port_hex, inode) != -1) 
+	    while (fscanf(fp, "%*s%x:%x%x:%x%*s%*s%*s%*s%*s%*s%s%*[^\n]\n", 
+	    	   &src_ip_hex, &src_port_hex, &dst_ip_hex, &dst_port_hex, inode) != -1) 
 	    {
 			inet_ntop(AF_INET, &src_ip_hex, src_ip, sizeof(src_ip));
 		    snprintf(src_ip_port, sizeof(src_ip_port), "%s:%d", src_ip, src_port_hex);
 
 			inet_ntop(AF_INET, &dst_ip_hex, dst_ip, sizeof(dst_ip));
 			// If destination port = 0, print "*" instead of 0
-			if(dst_port_hex == 0)
+			if (dst_port_hex == 0)
 		    	snprintf(dst_ip_port, sizeof(dst_ip_port), "%s:*", dst_ip);
 			else
 		    	snprintf(dst_ip_port, sizeof(dst_ip_port), "%s:%d", dst_ip, dst_port_hex);
@@ -214,7 +198,7 @@ void printIpv4Connection(const string& type)
 		    string pid = getPidByInode(inode);
 		    string cmdline = getCmdlineByPid(pid);
 
-		    if(!filter_flag || (filter_flag && matchRegex(cmdline, filter_string)))
+		    if (!filter_flag || (filter_flag && matchRegex(cmdline, filter_string)))
 	        	printf("%-5s %-25s %-25s %s/%s\n", type.c_str(), src_ip_port, dst_ip_port, pid.c_str(), cmdline.c_str()); 
 	    }
 	}
@@ -235,33 +219,29 @@ void printIpv6Connection(const string& type)
 	string path = "/proc/net/" + v6_type;
 	FILE *fp = fopen(path.c_str(), "r");;
 
-	if(fp) 
+	if (fp) 
 	{
-	    char line[MAXLINE];
-	    char src_ip_hex[33], src_port_hex[5], dst_ip_hex[33], dst_port_hex[5];
+	    unsigned int src_port_hex, dst_port_hex;
+	    char src_ip_hex[33], dst_ip_hex[33];
 	    char src_ip_port[46], dst_ip_port[46];
-	    char inode[20];
-	    unsigned int ip[16];
-	    unsigned int port;
+	    char line[MAXLINE];
+	    char inode[MAXLINE];
 
-	    // ignore first line
+	    // Ignore first line
 	    fgets(line, sizeof(line), fp);
 
-	    while(fscanf(fp, "%*s %[^:]:%s%[^:]:%s%*s%*s%*s%*s%*s%*s%s%*[^\n]\n" \
-	   	, src_ip_hex, src_port_hex, dst_ip_hex, dst_port_hex, inode) != -1) 
+	    while (fscanf(fp, "%*s %[^:]:%x%[^:]:%x%*s%*s%*s%*s%*s%*s%s%*[^\n]\n" \
+	   	, src_ip_hex, &src_port_hex, dst_ip_hex, &dst_port_hex, inode) != -1) 
 	   	{
 	   		string src_ip = ipv6_hex_to_string(src_ip_hex);
-			sscanf(src_port_hex, "%4x", &port);
-		    snprintf(src_ip_port, sizeof(src_ip_port), "%s:%u", src_ip.c_str(), port);
+		    snprintf(src_ip_port, sizeof(src_ip_port), "%s:%u", src_ip.c_str(), src_port_hex);
 
 			string dst_ip = ipv6_hex_to_string(dst_ip_hex);
-			sscanf(dst_port_hex, "%4x", &port);
-
-			// if port = 0, print "*" instead of 0
-			if(port == 0)
+			// If port = 0, print "*" instead of 0
+			if(dst_port_hex == 0)
 				snprintf(dst_ip_port, sizeof(dst_ip_port), "%s:*", dst_ip.c_str());
 			else
-				snprintf(dst_ip_port, sizeof(dst_ip_port), "%s:%u", dst_ip.c_str(), port);
+				snprintf(dst_ip_port, sizeof(dst_ip_port), "%s:%u", dst_ip.c_str(), dst_port_hex);
 
 		    string pid = getPidByInode(inode);
 		    string cmdline = getCmdlineByPid(pid);
@@ -310,11 +290,11 @@ int main(int argc, char *argv[])
 			break; 
 	}
 
-	// no argument or only filter string is passed
+	// No argument or only filter string is passed
 	if (argc == 1 || (argc == 2 && argv[optind] != NULL)) {
 		tcp_flag = udp_flag = true;
 	}
-	// filter string more than one
+	// More than one filter string is passed
 	if (optind < argc-1 && !invalid_flag) {
 		printf("%s: Too many arguments\n", argv[0]);
 		printUsage();
