@@ -1,4 +1,4 @@
-all:hw1.cpp
-	g++ hw1.cpp -o hw1	
+all:netstat.cpp
+	g++ netstat.cpp -o netstat
 clean:
-	rm -f hw1
+	rm -f netstat

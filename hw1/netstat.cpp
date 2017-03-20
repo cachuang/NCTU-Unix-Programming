@@ -2,12 +2,12 @@
 #include <fstream>
 #include <string>
 
-#include <stdio.h> 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <dirent.h>
-#include <getopt.h> 
+#include <getopt.h>
 #include <errno.h>
 #include <regex.h>
 #include <sys/stat.h>
@@ -28,10 +28,10 @@ string filter_string;
 
 void printUsage()
 {
-	printf("Usage: ./hw1 [-t|--tcp] [-u|--udp] [filter-string]\n"); 
+	printf("Usage: ./hw1 [-t|--tcp] [-u|--udp] [filter-string]\n");
 }
 
-bool isNumber(const string& str) 
+bool isNumber(const string& str)
 {
 	return str.find_first_not_of("0123456789") == string::npos;
 }
@@ -53,7 +53,7 @@ bool matchRegex(const string& target, const string& pattern)
 		result = true;
 	}
 	else {
-		// Not match or regexec() failed 
+		// Not match or regexec() failed
 		result = false;
 	}
 
@@ -72,7 +72,7 @@ string ipv6_hex_to_string(string ip_hex)
 		&tmp_ip.s6_addr[3], &tmp_ip.s6_addr[2], &tmp_ip.s6_addr[1], &tmp_ip.s6_addr[0],
 		&tmp_ip.s6_addr[7], &tmp_ip.s6_addr[6], &tmp_ip.s6_addr[5], &tmp_ip.s6_addr[4],
 		&tmp_ip.s6_addr[11], &tmp_ip.s6_addr[10], &tmp_ip.s6_addr[9], &tmp_ip.s6_addr[8],
-		&tmp_ip.s6_addr[15], &tmp_ip.s6_addr[14], &tmp_ip.s6_addr[13], &tmp_ip.s6_addr[12]) == 16) 
+		&tmp_ip.s6_addr[15], &tmp_ip.s6_addr[14], &tmp_ip.s6_addr[13], &tmp_ip.s6_addr[12]) == 16)
 	{
 		inet_ntop(AF_INET6, &tmp_ip, ip_str, sizeof(ip_str));
 	}
@@ -82,24 +82,24 @@ string ipv6_hex_to_string(string ip_hex)
 
 string getCmdlineByPid(const string& pid)
 {
-	string path = "/proc/" + pid + "/cmdline"; 
+	string path = "/proc/" + pid + "/cmdline";
 	string cmdline, arguments;
 	fstream file;
 	int pos;
 
 	file.open(path.c_str(), ios::in);
 
-	if (file) 
+	if (file)
 	{
 		// The first one is the process's name with its path
 		// Strip the path
 		getline(file, cmdline, '\0');
-		if((pos = cmdline.find_last_of("/")) != string::npos) 
+		if((pos = cmdline.find_last_of("/")) != string::npos)
 			cmdline.erase(0, pos+1);
 
 		while(getline(file, arguments, '\0'))
 			cmdline += " " + arguments;
-	} 
+	}
 
 	file.close();
 
@@ -109,7 +109,7 @@ string getCmdlineByPid(const string& pid)
 string getPidByInode(const char* inode)
 {
 	DIR *proc_dir = opendir("/proc");
-  	struct dirent *entry;  
+  	struct dirent *entry;
 
   	if (proc_dir != NULL)
   	{
@@ -117,17 +117,17 @@ string getPidByInode(const char* inode)
 	    {
 		  	if (isNumber(entry->d_name))
 		  	{
-		  		DIR *fd_dir;    
+		  		DIR *fd_dir;
 			  	string pid(entry->d_name);
 			  	string path = "/proc/" + pid + "/fd";
 
 			  	fd_dir = opendir(path.c_str());
 
-			  	if (fd_dir != NULL) 
+			  	if (fd_dir != NULL)
 			  	{
-			  		struct dirent *entry; 
+			  		struct dirent *entry;
 
-			  		while (entry = readdir(fd_dir)) 
+			  		while (entry = readdir(fd_dir))
 			  		{
 			  			char line[MAXLINE] = {0};
 			  			string file(entry->d_name);
@@ -145,7 +145,7 @@ string getPidByInode(const char* inode)
 			  			}
 			  		}
 			  	}
-			  	else 
+			  	else
 			  	{
 			   		char error[MAXLINE];
 			   		snprintf(error, sizeof(error), "Failed to open /proc/%s/fd", pid.c_str());
@@ -159,7 +159,7 @@ string getPidByInode(const char* inode)
 
 	    closedir(proc_dir);
   	}
-  	else 
+  	else
   	{
    		perror("Failed to open /proc");
    		exit(errno);
@@ -171,7 +171,7 @@ void printIpv4Connection(const string& type)
 	string path = "/proc/net/" + type;
 	FILE *fp = fopen(path.c_str(), "r");;
 
-	if(fp) 
+	if(fp)
 	{
 	    unsigned int src_ip_hex, src_port_hex, dst_ip_hex, dst_port_hex;
 	    char src_ip[INET_ADDRSTRLEN], dst_ip[INET_ADDRSTRLEN];
@@ -182,8 +182,8 @@ void printIpv4Connection(const string& type)
 	    // Ignore first line
 	    fgets(line, sizeof(line), fp);
 
-	    while (fscanf(fp, "%*s%x:%x%x:%x%*s%*s%*s%*s%*s%*s%s%*[^\n]\n", 
-	    	   &src_ip_hex, &src_port_hex, &dst_ip_hex, &dst_port_hex, inode) != -1) 
+	    while (fscanf(fp, "%*s%x:%x%x:%x%*s%*s%*s%*s%*s%*s%s%*[^\n]\n",
+	    	   &src_ip_hex, &src_port_hex, &dst_ip_hex, &dst_port_hex, inode) != -1)
 	    {
 			inet_ntop(AF_INET, &src_ip_hex, src_ip, sizeof(src_ip));
 		    snprintf(src_ip_port, sizeof(src_ip_port), "%s:%d", src_ip, src_port_hex);
@@ -199,10 +199,10 @@ void printIpv4Connection(const string& type)
 		    string cmdline = getCmdlineByPid(pid);
 
 		    if (!filter_flag || (filter_flag && matchRegex(cmdline, filter_string)))
-	        	printf("%-5s %-25s %-25s %s/%s\n", type.c_str(), src_ip_port, dst_ip_port, pid.c_str(), cmdline.c_str()); 
+	        	printf("%-5s %-25s %-25s %s/%s\n", type.c_str(), src_ip_port, dst_ip_port, pid.c_str(), cmdline.c_str());
 	    }
 	}
-	else 
+	else
 	{
 		char error[MAXLINE];
    		snprintf(error, sizeof(error), "Failed to open /proc/net/%s", type.c_str());
@@ -219,7 +219,7 @@ void printIpv6Connection(const string& type)
 	string path = "/proc/net/" + v6_type;
 	FILE *fp = fopen(path.c_str(), "r");;
 
-	if (fp) 
+	if (fp)
 	{
 	    unsigned int src_port_hex, dst_port_hex;
 	    char src_ip_hex[33], dst_ip_hex[33];
@@ -231,7 +231,7 @@ void printIpv6Connection(const string& type)
 	    fgets(line, sizeof(line), fp);
 
 	    while (fscanf(fp, "%*s %[^:]:%x%[^:]:%x%*s%*s%*s%*s%*s%*s%s%*[^\n]\n" \
-	   	, src_ip_hex, &src_port_hex, dst_ip_hex, &dst_port_hex, inode) != -1) 
+	   	, src_ip_hex, &src_port_hex, dst_ip_hex, &dst_port_hex, inode) != -1)
 	   	{
 	   		string src_ip = ipv6_hex_to_string(src_ip_hex);
 		    snprintf(src_ip_port, sizeof(src_ip_port), "%s:%u", src_ip.c_str(), src_port_hex);
@@ -247,7 +247,7 @@ void printIpv6Connection(const string& type)
 		    string cmdline = getCmdlineByPid(pid);
 
 		    if(!filter_flag || (filter_flag && matchRegex(cmdline, filter_string)))
-	        	printf("%-5s %-25s %-25s %s/%s\n", v6_type.c_str(), src_ip_port, dst_ip_port, pid.c_str(), cmdline.c_str()); 
+	        	printf("%-5s %-25s %-25s %s/%s\n", v6_type.c_str(), src_ip_port, dst_ip_port, pid.c_str(), cmdline.c_str());
 	    }
 	}
 	else
@@ -261,33 +261,33 @@ void printIpv6Connection(const string& type)
 	fclose(fp);
 }
 
-int main(int argc, char *argv[])  
-{  
-	int option;  
-    const char *short_options = "tu";  
-	const struct option long_options[] = {  
-		{ "tcp", 0, NULL, 't' },  
-		{ "udp", 0, NULL, 'u' },  
-		{ 0, 0, 0, 0 },  
-	}; 
+int main(int argc, char *argv[])
+{
+	int option;
+    const char *short_options = "tu";
+	const struct option long_options[] = {
+		{ "tcp", 0, NULL, 't' },
+		{ "udp", 0, NULL, 'u' },
+		{ 0, 0, 0, 0 },
+	};
 
-	while ((option = getopt_long(argc, argv, short_options, long_options, NULL)) != -1) 
-	{  
-		switch (option) 
-		{  
-			case 't':  
+	while ((option = getopt_long(argc, argv, short_options, long_options, NULL)) != -1)
+	{
+		switch (option)
+		{
+			case 't':
 				tcp_flag = true;
-				break;  
-			case 'u':  
+				break;
+			case 'u':
 				udp_flag = true;
-				break;  
-			case '?':  
+				break;
+			case '?':
 				invalid_flag = true;
-				break;  
-		} 
+				break;
+		}
 
-		if(invalid_flag) 
-			break; 
+		if(invalid_flag)
+			break;
 	}
 
 	// No argument or only filter string is passed
@@ -324,5 +324,5 @@ int main(int argc, char *argv[])
 		printf("\n");
 	}
 
-	return 0;  
-}  
+	return 0;
+}
