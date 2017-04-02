@@ -86,7 +86,7 @@ char* tmpnam(char *s)
 }
 void exit(int status)
 {
-    exit_t original_exit = (exit_t) dlsym(handle, "exit");
+    __attribute__((__noreturn__)) exit_t original_exit = (exit_t) dlsym(handle, "exit");
     original_exit(status);
 }
 char* getenv(const char *name)
@@ -147,7 +147,7 @@ int dup2(int oldfd, int newfd)
 }
 void _exit(int status)
 {
-    _exit_t original__exit = (_exit_t) dlsym(handle, "_exit");
+    __attribute__((__noreturn__)) _exit_t original__exit = (_exit_t) dlsym(handle, "_exit");
     original__exit(status);
 }
 int execl(const char *path, const char *arg, ...)
