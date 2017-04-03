@@ -1,7 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <dlfcn.h>
 #include <dirent.h>
+#include <stdarg.h>
+#include <string>
+#include <unistd.h>
+#include <pwd.h>
+#include <grp.h>
+#include <sys/wait.h>
 
 static void init(void) __attribute__((constructor));
 
@@ -20,7 +27,7 @@ typedef int (*remove_t)(const char *pathname);
 typedef int (*rename_t)(const char *oldpath, const char *newpath);
 typedef void (*setbuf_t)(FILE *stream, char *buf);
 typedef int (*setvbuf_t)(FILE *stream, char *buf, int mode, size_t size);
-typedef char (*tempnam_t)(const char *dir, const char *pfx);
+typedef char *(*tempnam_t)(const char *dir, const char *pfx);
 typedef FILE *(*tmpfile_t)(void);
 typedef char *(*tmpnam_t)(char *s);
 typedef void (*exit_t)(int status);

@@ -1,0 +1,21 @@
+[monitor] creat('temp', 755) = 4
+[monitor] open('temp', 0) = 5
+[monitor] rename('./temp', './temp2') = 0
+[monitor] setbuf('/home/kevin/NCTU-Unix-Programming/hw2/temp2', '(null)')
+[monitor] setvbuf('/home/kevin/NCTU-Unix-Programming/hw2/temp2', '(null)', 0, 1024) = 0
+[monitor] remove('./temp2') = 0
+[monitor] tempnam('/tmp', 'tempnam_test') = /tmp/tempntAk71P
+[monitor] tmpfile() = /tmp/tmpfrySZg3 (deleted)
+[monitor] tmpnam('/tmp/file1TKSvg') = /tmp/file1TKSvg
+[monitor] getenv('HOME') = /home/kevin
+[monitor] mkdtemp('/tmp/tmpdir.bgALKt') = /tmp/tmpdir.bgALKt
+[monitor] mkstemp('/tmp/tmp.dfbFZG') = 7
+[monitor] putenv('TEST=test') = 0
+[monitor] getenv('TEST') = test
+[monitor] rand() = 1804289383
+[monitor] rand_r(3071778896) = 343609111
+[monitor] setenv('TEST', 'test2', 1) = 0
+[monitor] getenv('TEST') = test2
+[monitor] srand() = 1491246669
+[monitor] getcwd('/home/kevin/NCTU-Unix-Programming/hw2', 1024) = 0x7ffc79f45870
+[monitor] chown('./temp2', 'kevin', 'kevin') = -1
