@@ -8,9 +8,12 @@
 #include <unistd.h>
 #include <pwd.h>
 #include <grp.h>
-#include <sys/wait.h>
+#include <errno.h>
+#include <limits.h>
+#include <sys/stat.h>
 
 static void init(void) __attribute__((constructor));
+static void end(void)  __attribute__((destructor));
 
 typedef int (*closedir_t)(DIR *dirp);
 typedef DIR *(*fdopendir_t)(int fd);
@@ -76,12 +79,12 @@ typedef int (*setuid_t)(uid_t uid);
 typedef unsigned int (*sleep_t)(unsigned int seconds);
 typedef int (*symlink_t)(const char *oldpath, const char *newpath);
 typedef int (*unlink_t)(const char *path);
-typedef ssize_t (*write_t)(int fildes, const void *buf, size_t nbyte);
+typedef ssize_t (*write_t)(int fd, const void *buf, size_t nbyte);
 typedef int (*chmod_t)(const char *path, mode_t mode);
 typedef int (*fchmod_t)(int fd, mode_t mode);
-typedef int (*fstat_t)(int fildes, struct stat *buf);
-typedef int (*lstat_t)(const char *path, struct stat *buf);
+typedef int (*__fxstat_t)(int ver, int fildes, struct stat *buf);
+typedef int (*__lxstat_t)(int ver, const char *path, struct stat *buf);
 typedef int (*mkdir_t)(const char *pathname, mode_t mode);
 typedef int (*mkfifo_t)(const char *pathname, mode_t mode);
-typedef int (*stat_t)(const char *path, struct stat *buf);
+typedef int (*__xstat_t)(int ver, const char *path, struct stat *buf);
 typedef mode_t (*umask_t)(mode_t mask);
