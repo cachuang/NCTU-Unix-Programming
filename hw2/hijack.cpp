@@ -101,13 +101,18 @@ struct dirent* readdir(DIR *dirp)
 
     string dirname = getFileNameByFd(dirfd(dirp));
 
-    ino_t ino = ret->d_ino;
-    off_t off = ret->d_off;
-    unsigned short int reclen = ret->d_reclen;
-    unsigned char type = ret->d_type;
-    char *name = ret->d_name;
+    if(ret) 
+    {
+        ino_t ino = ret->d_ino;
+        off_t off = ret->d_off;
+        unsigned short int reclen = ret->d_reclen;
+        unsigned char type = ret->d_type;
+        char *name = ret->d_name;
 
-    fprintf(output, "%s %s('%s') = (inode=%zu, offset=%jd, reclen=%u, type=%u, name=%s)\n", OUTPUT_PREFIX, __func__, dirname.c_str(), ino, off, reclen, type, name);
+        fprintf(output, "%s %s('%s') = (inode=%zu, offset=%jd, reclen=%u, type=%u, name=%s)\n", OUTPUT_PREFIX, __func__, dirname.c_str(), ino, off, reclen, type, name);
+    }
+    else 
+        fprintf(output, "%s %s('%s') = (null)\n", OUTPUT_PREFIX, __func__, dirname.c_str());
 
     return ret;
 }
@@ -357,16 +362,16 @@ void srand(unsigned int seed)
     srand_t original_srand = (srand_t) dlsym(handle, __func__);
     original_srand(seed);
 }
-int system(const char *command)
-{
-    // call original function
-    system_t original_system = (system_t) dlsym(handle, __func__);
-    int ret = original_system(command);
+// int system(const char *command)
+// {
+//     // call original function
+//     system_t original_system = (system_t) dlsym(handle, __func__);
+//     int ret = original_system(command);
 
-    fprintf(output, "%s %s('%s') = %d\n", OUTPUT_PREFIX, __func__, command, ret);
+//     fprintf(output, "%s %s('%s') = %d\n", OUTPUT_PREFIX, __func__, command, ret);
 
-    return ret;
-}
+//     return ret;
+// }
 int chdir(const char *path)
 {
     // call original function
@@ -1038,10 +1043,10 @@ int __fxstat(int ver, int fd, struct stat *buf)
     time_t ctime = buf->st_ctime;  
 
     if(filename != "")
-        fprintf(output, "%s %s('%s', dev=%zu, inode=%zu, mode=%o, nlink=%zu, uid=%d, gid=%d, rdev=%zu, size=%jd, blksize=%zu, blocks=%zu, mtime=%zu, stime=%zu) = %d\n", 
+        fprintf(output, "%s %s('%s', (dev=%zu, inode=%zu, mode=%o, nlink=%zu, uid=%d, gid=%d, rdev=%zu, size=%jd, blksize=%zu, blocks=%zu, mtime=%zu, stime=%zu)) = %d\n", 
                         OUTPUT_PREFIX, "fstat", filename.c_str(), dev, ino, mode, nlink, uid, gid, rdev, size, blksize, blocks, mtime, ctime, ret);
     else
-        fprintf(output, "%s %s(%d, dev=%zu, inode=%zu, mode=%o, nlink=%zu, uid=%d, gid=%d, rdev=%zu, size=%jd, blksize=%zu, blocks=%zu, mtime=%zu, stime=%zu) = %d\n", 
+        fprintf(output, "%s %s(%d, (dev=%zu, inode=%zu, mode=%o, nlink=%zu, uid=%d, gid=%d, rdev=%zu, size=%jd, blksize=%zu, blocks=%zu, mtime=%zu, stime=%zu)) = %d\n", 
                         OUTPUT_PREFIX, "fstat", fd, dev, ino, mode, nlink, uid, gid, rdev, size, blksize, blocks, mtime, ctime, ret);
 
     return ret;
@@ -1065,7 +1070,7 @@ int __lxstat(int ver, const char *path, struct stat *buf)
     time_t mtime = buf->st_mtime;  
     time_t ctime = buf->st_ctime;  
 
-    fprintf(output, "%s %s('%s', dev=%zu, inode=%zu, mode=%o, nlink=%zu, uid=%d, gid=%d, rdev=%zu, size=%jd, blksize=%zu, blocks=%zu, mtime=%zu, stime=%zu) = %d\n", 
+    fprintf(output, "%s %s('%s', (dev=%zu, inode=%zu, mode=%o, nlink=%zu, uid=%d, gid=%d, rdev=%zu, size=%jd, blksize=%zu, blocks=%zu, mtime=%zu, stime=%zu)) = %d\n", 
                     OUTPUT_PREFIX, "lstat", path, dev, ino, mode, nlink, uid, gid, rdev, size, blksize, blocks, mtime, ctime, ret);
 
     return ret;
@@ -1109,7 +1114,7 @@ int __xstat(int ver, const char *path, struct stat *buf)
     time_t mtime = buf->st_mtime;  
     time_t ctime = buf->st_ctime;  
 
-    fprintf(output, "%s %s('%s', dev=%zu, inode=%zu, mode=%o, nlink=%zu, uid=%d, gid=%d, rdev=%zu, size=%jd, blksize=%zu, blocks=%zu, mtime=%zu, stime=%zu) = %d\n", 
+    fprintf(output, "%s %s('%s', (dev=%zu, inode=%zu, mode=%o, nlink=%zu, uid=%d, gid=%d, rdev=%zu, size=%jd, blksize=%zu, blocks=%zu, mtime=%zu, stime=%zu)) = %d\n", 
                     OUTPUT_PREFIX, "stat", path, dev, ino, mode, nlink, uid, gid, rdev, size, blksize, blocks, mtime, ctime, ret);
 
     return ret;
