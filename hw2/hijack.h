@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <sys/stat.h>
+#include <sys/syscall.h>
 
 static void init(void) __attribute__((constructor));
 static void end(void)  __attribute__((destructor));

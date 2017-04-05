@@ -804,11 +804,9 @@ pid_t fork(void)
     fork_t original_fork = (fork_t) dlsym(handle, __func__);
     int ret = original_fork();
 
-    // close file if process is child (pid = 0)
-    if(ret == 0)
-        fclose(output);
-
     fprintf(output, "%s %s() = %d\n", OUTPUT_PREFIX, __func__, ret);
+
+    return ret;
 }
 int fsync(int fd)
 {
@@ -1254,7 +1252,7 @@ struct tm *localtime(const time_t *timep)
         int hour = ret->tm_hour;       /* hours */
         int mday = ret->tm_mday;       /* day of the month */
         int mon = ret->tm_mon;         /* month */
-        int year = ret->tm_year;       /* year */
+        int year = ret->tm_year;       /* year */ 
         int wday = ret->tm_wday;       /* day of the week */
         int yday = ret->tm_yday;       /* day in the year */
         int isdst = ret->tm_isdst;     /* daylight saving time */
@@ -1263,7 +1261,6 @@ struct tm *localtime(const time_t *timep)
     }
     else
         fprintf(output, "%s %s(%ld) = %p\n", OUTPUT_PREFIX, __func__, *timep, ret);
-
 
     return ret;      
 }
