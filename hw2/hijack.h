@@ -88,3 +88,9 @@ typedef int (*mkdir_t)(const char *pathname, mode_t mode);
 typedef int (*mkfifo_t)(const char *pathname, mode_t mode);
 typedef int (*__xstat_t)(int ver, const char *path, struct stat *buf);
 typedef mode_t (*umask_t)(mode_t mask);
+
+typedef int (*fflush_t)(FILE *stream);
+typedef void *(*realloc_t)(void *ptr, size_t size);
+typedef struct tm *(*localtime_t)(const time_t *timep);
+typedef void *(*memset_t)(void *ptr, int value, size_t num);
+typedef void *(*memcpy_t)(void *destination, const void *source, size_t num);
