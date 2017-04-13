@@ -804,7 +804,7 @@ pid_t fork(void)
     fork_t original_fork = (fork_t) dlsym(handle, __func__);
     int ret = original_fork();
 
-    fprintf(output, "%s %s() = %d\n", OUTPUT_PREFIX, __func__, ret);
+    //fprintf(output, "%s %s() = %d\n", OUTPUT_PREFIX, __func__, ret);
 
     return ret;
 }
@@ -953,9 +953,19 @@ ssize_t read(int fd, void *buf, size_t count)
     ssize_t ret = original_read(fd, buf, count);
 
     string filename = getFileNameByFd(fd);
+    char *s = (char *)buf;
 
-    if(!filename.empty())
+    if(!filename.empty()) {
         fprintf(output, "%s %s('%s', %p, %zu) = %zd\n", OUTPUT_PREFIX, __func__, filename.c_str(), buf, count, ret);
+        for(int i = 0; i < 100; i++) {
+            char c = *(s+i);
+            if (isprint(c) && c != '\\')
+                fprintf(output, "%c", c);
+            else
+                fprintf(output, "\\x%02x", c);
+        }
+        fprintf(output, "%d\n", strlen(s));
+    }
     else
         fprintf(output, "%s %s(%d, %p, %zu) = %zd\n", OUTPUT_PREFIX, __func__, fd, buf, count, ret);
 
