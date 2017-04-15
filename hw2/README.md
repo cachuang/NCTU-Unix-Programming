@@ -10,9 +10,8 @@ You have to compile your source codes and generate a shared object. You don't ha
 
 The minimum list of monitored library calls is shown below. It covers almost all the functions we have introduced in the class.
 
-|  |  |  |    |  |  |   |  |
-|:--------:|:---------:|:-------:|:---------:|:---------:|:---------:|:--------:|:-------:|
 | closedir | fdopendir | opendir |  readdir  | readdir_r | rewinddir |  seekdir | telldir |
+|:--------:|:---------:|:-------:|:---------:|:---------:|:---------:|:--------:|:-------:|
 |   creat  |    open   |  remove |   rename  |   setbuf  |  setvbuf  |  tempnam | tmpfile |
 |  tmpnam  |    exit   |  getenv |  mkdtemp  |  mkstemp  |   putenv  |   rand   |  rand_r |
 |  setenv  |   srand   |  system |   chdir   |   chown   |   close   |    dup   |   dup2  |
@@ -24,13 +23,13 @@ The minimum list of monitored library calls is shown below. It covers almost all
 
 ### Summarize of Function Call Parameters
 
-You will get a basic score if you only print out the raw value of monitored function calls. For example, the primitive data types char, int, short, long, long long, float, and double. For pointers, you can also print out its raw values. If you would like to get higher scores, here are additional requirements.
+You will get a basic score if you only print out the raw value of monitored function calls. For example, the primitive data types **char**, **int**, **short**, **long**, **long long**, **float**, and **double**. For pointers, you can also print out its raw values. If you would like to get higher scores, here are additional requirements.
 
-- For char * data type, you can print it out as a string.
-- For file descriptors (passed as an int), FILE*, and DIR* pointers, you can convert them to corresponding file names.
-- For char * arrays, print out the first few strings in the array.
-- For uid and gid (also passed as an int), convert them to the corresponding user name and group name.
-- For struct stat or its pointer, retrieve meaningful information from the structure. For example, file type, file size, and permissions.
+- For **char *** data type, you can print it out as a string.
+- For file descriptors (passed as an **int**), **FILE***, and **DIR*** pointers, you can convert them to corresponding file names.
+- For **char *** arrays, print out the first few strings in the array.
+- For uid and gid (also passed as an **int**), convert them to the corresponding user name and group name.
+- For **struct stat** or its pointer, retrieve meaningful information from the structure. For example, file type, file size, and permissions.
 
 ### Grading Policy
 
@@ -40,7 +39,7 @@ The tentative grading policy for this homework is listed below:
 - [30%] Monitor functions listed in minimum requirements.
 - [10%] Provide basic summaries for function call parameters.
 - [20%] Provide comprehensive summaries for function call parameters.
-- [10%] Output can be configured using MONITOR_OUTPUT environmental variable.
+- [10%] Output can be configured using **MONITOR_OUTPUT** environmental variable.
 - [20%] Monitor more library calls than the minimum requirement (up to 5). Please describe why you choose the function and the corresponding testing binaries
 - [10%] Compiled size of your codes (stripped). The smaller, the better.
 - [10%] Use Makefile to manage the building process of your program. We will not grade your program if we cannot use make command to build your program.
@@ -52,12 +51,12 @@ Some hints that may simplify your work:
 - You may need to define macros to simplify your implementation.
 - You may consider working with # and ## operators in macros.
 - For variable-length function parameters, consider working with strarg.h.
-- You may consider working with __attribute__((constructor)). If you don't know what is that, please google for it!
-- The implementation for some library functions may be different to its well-known prototypes. For example, the actual implementation for stat in GNU C library is __xstat. Therefore, you may be not able to find symbol stat in the library. In case that you are not sure about the real symbols used in C library, try to work with readelf or nm to get the symbol names.
+- You may consider working with **__attribute__((constructor))**. If you don't know what is that, please google for it!
+- The implementation for some library functions may be different to its well-known prototypes. For example, the actual implementation for **stat** in GNU C library is **__xstat**. Therefore, you may be not able to find symbol **stat** in the library. In case that you are not sure about the real symbols used in C library, try to work with **readelf** or **nm** to get the symbol names.
 
 ### Running Examples
 
-Suppose you have compiled your homework files into hw2.so, two examples from our simple implementation are given below. In the first example, the output is stored into monitor.out file.
+Suppose you have compiled your homework files into **hw2.so**, two examples from our simple implementation are given below. In the first example, the output is stored into **monitor.out** file.
 
 ``` sh
 $ MONITOR_OUTPUT=monitor.out LD_PRELOAD=./hw2.so head -n 1000 /etc/services
@@ -76,7 +75,7 @@ $ cat monitor.out
 [monitor] fflush(0x7f69c738b540) = 0
 ```
 
-In the second example, the output is written to stderr. The blue lines are those printed out by the monitor.
+In the second example, the output is written to **stderr**. The blue lines are those printed out by the monitor.
 
 ``` sh
 $ MONITOR_OUTPUT=stderr LD_PRELOAD=./hw2.so ls -la
@@ -173,7 +172,7 @@ drwxrwxr-x 23 chuang chuang  4096 Mar 29 10:08 ..
 ```
 ### Some Other Hints ...
 
-When testing your homework, you may inspect symbols used by an executable. We have mentioned that you are not able to see any symbol if the symbols were stripped using strip command. However, you may consider working with readelf command. For example, we can check the symbols that are unknown to the binary:
+When testing your homework, you may inspect symbols used by an executable. We have mentioned that you are not able to see any symbol if the symbols were stripped using **strip** command. However, you may consider working with **readelf** command. For example, we can check the symbols that are unknown to the binary:
 
 ``` sh
 $ nm /usr/bin/wget
@@ -187,4 +186,4 @@ $ readelf --syms /usr/bin/wget | grep open
    201: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND fopen64@GLIBC_2.2.5 (2)
 ```
 
-Alternatively, you may consider using nm -D to read symbols. Basically we have two different symbol tables. One is the regular symbol table and the other is dynamic symbol table. The one removed by strip is the regular symbol table. So you will need to work with nm -D or readelf --syms to read the dynamic symbol table.
+Alternatively, you may consider using **nm -D** to read symbols. Basically we have two different symbol tables. One is the regular symbol table and the other is dynamic symbol table. The one removed by **strip** is the regular symbol table. So you will need to work with **nm -D** or **readelf --syms** to read the dynamic symbol table.
