@@ -1,17 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <dlfcn.h>
 #include <dirent.h>
 #include <stdarg.h>
-#include <string>
-#include <unistd.h>
-#include <pwd.h>
-#include <grp.h>
 #include <errno.h>
 #include <limits.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
+#include <pwd.h>
+#include <grp.h>
+#include <string>
 
 static void init(void) __attribute__((constructor));
 static void end(void)  __attribute__((destructor));
@@ -50,7 +50,6 @@ typedef int (*close_t)(int fd);
 typedef int (*dup_t)(int oldfd);
 typedef int (*dup2_t)(int oldfd, int newfd);
 typedef void (*_exit_t)(int status);
-typedef int (*execl_t)(const char *path, const char *arg, ...);
 typedef int (*execle_t)(const char *path, const char *arg, ...);
 typedef int (*execlp_t)(const char *file, const char *arg, ...);
 typedef int (*execv_t)(const char *path, char *const argv[]);
@@ -89,7 +88,7 @@ typedef int (*mkdir_t)(const char *pathname, mode_t mode);
 typedef int (*mkfifo_t)(const char *pathname, mode_t mode);
 typedef int (*__xstat_t)(int ver, const char *path, struct stat *buf);
 typedef mode_t (*umask_t)(mode_t mask);
-
+// Additional monitored function
 typedef int (*fflush_t)(FILE *stream);
 typedef void *(*realloc_t)(void *ptr, size_t size);
 typedef struct tm *(*localtime_t)(const time_t *timep);
