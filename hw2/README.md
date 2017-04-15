@@ -10,7 +10,7 @@ You have to compile your source codes and generate a shared object. You don't ha
 
 The minimum list of monitored library calls is shown below. It covers almost all the functions we have introduced in the class.
 
-| closedir | fdopendir | opendir |  readdir  | readdir_r | rewinddir |  seekdir | telldir |
+| <span style="font-weight:normal">closedir</span> | <span style="font-weight:normal">fdopendir</span> | <span style="font-weight:normal">opendir</span> |  <span style="font-weight:normal">readdir</span>  | <span style="font-weight:normal">readdir_r</span> | <span style="font-weight:normal">rewinddir</span> |  <span style="font-weight:normal">seekdir</span> | <span style="font-weight:normal">telldir</span> |
 |:--------:|:---------:|:-------:|:---------:|:---------:|:---------:|:--------:|:-------:|
 |   creat  |    open   |  remove |   rename  |   setbuf  |  setvbuf  |  tempnam | tmpfile |
 |  tmpnam  |    exit   |  getenv |  mkdtemp  |  mkstemp  |   putenv  |   rand   |  rand_r |

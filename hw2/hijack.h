@@ -26,7 +26,6 @@ typedef void (*seekdir_t)(DIR *dirp, long offset);
 typedef long (*telldir_t)(DIR *dirp);
 typedef int (*creat_t)(const char *pathname, mode_t mode);
 typedef int (*open_t)(const char *pathname, int flags);
-//typedef int (*open_t)(const char *pathname, int flags, mode_t mode);
 typedef int (*remove_t)(const char *pathname);
 typedef int (*rename_t)(const char *oldpath, const char *newpath);
 typedef void (*setbuf_t)(FILE *stream, char *buf);
