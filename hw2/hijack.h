@@ -90,6 +90,6 @@ typedef mode_t (*umask_t)(mode_t mask);
 // Additional monitored function
 typedef int (*fflush_t)(FILE *stream);
 typedef void *(*realloc_t)(void *ptr, size_t size);
+typedef size_t (*fwrite_t)(const void *ptr, size_t size, size_t count, FILE *stream);
+typedef char *(*setlocale_t)(int category, const char *locale);
 typedef struct tm *(*localtime_t)(const time_t *timep);
-typedef void *(*memset_t)(void *ptr, int value, size_t num);
-typedef void *(*memcpy_t)(void *destination, const void *source, size_t num);

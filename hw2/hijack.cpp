@@ -8,8 +8,8 @@
 
 using namespace std;
 
-void *handle;
-FILE *output;
+static void *handle;
+static FILE *output;
 
 static void init(void)
 {
@@ -1212,7 +1212,6 @@ mode_t umask(mode_t mask)
 
     return ret;
 }
-
 int fflush(FILE *stream)
 {
     string filename;
@@ -1230,7 +1229,6 @@ int fflush(FILE *stream)
 
     return ret;
 }
-
 void *realloc(void *ptr, size_t size)
 {
     // call original function
@@ -1241,7 +1239,26 @@ void *realloc(void *ptr, size_t size)
 
     return ret;    
 }
+size_t fwrite(const void *ptr, size_t size, size_t count, FILE *stream)
+{
+     // call original function
+    fwrite_t original_fwrite = (fwrite_t) dlsym(handle, __func__);
+    size_t ret = original_fwrite(ptr, size, count, stream);
 
+    fprintf(output, "%s %s(%p, %zu, %zu, %p) = %zu\n", OUTPUT_PREFIX, __func__, ptr, size, count, stream, ret);
+
+    return ret;      
+}
+char *setlocale(int category, const char *locale)
+{
+     // call original function
+    setlocale_t original_setlocale = (setlocale_t) dlsym(handle, __func__);
+    char *ret = original_setlocale(category, locale);
+
+    fprintf(output, "%s %s(%d, '%s') = %s\n", OUTPUT_PREFIX, __func__, category, locale, ret);
+
+    return ret;       
+}
 struct tm *localtime(const time_t *timep)
 {
     // call original function
@@ -1265,28 +1282,6 @@ struct tm *localtime(const time_t *timep)
         fprintf(output, "%s %s(%ld) = %p\n", OUTPUT_PREFIX, __func__, *timep, ret);
 
     return ret;      
-}
-
-void *memset(void *ptr, int value, size_t num)
-{
-    // call original function
-    memset_t original_memset = (memset_t) dlsym(handle, __func__);
-    void *ret = original_memset(ptr, value, num);
-
-    fprintf(output, "%s %s(%p, %d, %zu) = %p\n", OUTPUT_PREFIX, __func__, ptr, value, num, ret);
-
-    return ret;          
-}
-
-void *memcpy(void *destination, const void *source, size_t num)
-{
-    // call original function
-    memcpy_t original_memcpy = (memcpy_t) dlsym(handle, __func__);
-    void *ret = original_memcpy(destination, source, num);
-
-    fprintf(output, "%s %s(%p, %p, %zu) = %p\n", OUTPUT_PREFIX, __func__, destination, source, num, ret);
-
-    return ret;     
 }
 
 } // extern "C"

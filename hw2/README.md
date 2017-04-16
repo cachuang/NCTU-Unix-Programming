@@ -10,24 +10,108 @@ You have to compile your source codes and generate a shared object. You don't ha
 
 The minimum list of monitored library calls is shown below. It covers almost all the functions we have introduced in the class.
 
-| <span style="font-weight:normal">closedir</span> | <span style="font-weight:normal">fdopendir</span> | <span style="font-weight:normal">opendir</span> |  <span style="font-weight:normal">readdir</span>  | <span style="font-weight:normal">readdir_r</span> | <span style="font-weight:normal">rewinddir</span> |  <span style="font-weight:normal">seekdir</span> | <span style="font-weight:normal">telldir</span> |
-|:--------:|:---------:|:-------:|:---------:|:---------:|:---------:|:--------:|:-------:|
-|   creat  |    open   |  remove |   rename  |   setbuf  |  setvbuf  |  tempnam | tmpfile |
-|  tmpnam  |    exit   |  getenv |  mkdtemp  |  mkstemp  |   putenv  |   rand   |  rand_r |
-|  setenv  |   srand   |  system |   chdir   |   chown   |   close   |    dup   |   dup2  |
-|   _exit  |   execl   |  execle |   execlp  |   execv   |   execve  |  execvp  |  fchdir |
-|  fchown  |    fork   |  fsync  | ftruncate |   getcwd  |  getegid  |  geteuid |  getgid |
-|  getuid  |    link   |   pipe  |   pread   |   pwrite  |    read   | readlink |  rmdir  |
-|  setegid |  seteuid  |  setgid |   setuid  |   sleep   |  symlink  |  unlink  |  write  |
-|   chmod  |   fchmod  |  fstat  |   lstat   |   mkdir   |   mkfifo  |   stat   |  umask  |
+<div align="center">
+  <table align="center">
+    <tr>
+      <td align="center">closedir</td>
+      <td align="center">fdopendir</td>
+      <td align="center">opendir</td>
+      <td align="center">readdir</td>
+      <td align="center">readdir_r</td>
+      <td align="center">rewinddir</td>
+      <td align="center">seekdir</td>
+      <td align="center">telldir</td>
+    </tr>
+    <tr>
+      <td align="center">creat</td>
+      <td align="center">open</td>
+      <td align="center">remove</td>
+      <td align="center">rename</td>
+      <td align="center">setbuf</td>
+      <td align="center">setvbuf</td>
+      <td align="center">tempnam</td>
+      <td align="center">tmpfile</td>
+    </tr>
+    <tr>
+      <td align="center">tmpnam</td>
+      <td align="center">exit</td>
+      <td align="center">getenv</td>
+      <td align="center">mkdtemp</td>
+      <td align="center">mkstemp</td>
+      <td align="center">putenv</td>
+      <td align="center">rand</td>
+      <td align="center">rand_r</td>
+    </tr>
+    <tr>
+      <td align="center">setenv</td>
+      <td align="center">srand</td>
+      <td align="center">system</td>
+      <td align="center">chdir</td>
+      <td align="center">chown</td>
+      <td align="center">close</td>
+      <td align="center">dup</td>
+      <td align="center">dup2</td>
+    </tr>
+    <tr>
+      <td align="center">_exit</td>
+      <td align="center">execl</td>
+      <td align="center">execle</td>
+      <td align="center">execlp</td>
+      <td align="center">execv</td>
+      <td align="center">execve</td>
+      <td align="center">execvp</td>
+      <td align="center">fchdir</td>
+    </tr>
+    <tr>
+      <td align="center">fchown</td>
+      <td align="center">fork</td>
+      <td align="center">fsync</td>
+      <td align="center">ftruncate</td>
+      <td align="center">getcwd</td>
+      <td align="center">getegid</td>
+      <td align="center">geteuid</td>
+      <td align="center">getgid</td>
+    </tr>
+    <tr>
+      <td align="center">getuid</td>
+      <td align="center">link</td>
+      <td align="center">pipe</td>
+      <td align="center">pread</td>
+      <td align="center">pwrite</td>
+      <td align="center">read</td>
+      <td align="center">readlink</td>
+      <td align="center">rmdir</td>
+    </tr>
+    <tr>
+      <td align="center">setegid</td>
+      <td align="center">seteuid</td>
+      <td align="center">setgid</td>
+      <td align="center">setuid</td>
+      <td align="center">sleep</td>
+      <td align="center">symlink</td>
+      <td align="center">unlink</td>
+      <td align="center">write</td>
+    </tr>
+    <tr>
+      <td align="center">chmod</td>
+      <td align="center">fchmod</td>
+      <td align="center">fstat</td>
+      <td align="center">lstat</td>
+      <td align="center">mkdir</td>
+      <td align="center">mkfifo</td>
+      <td align="center">stat</td>
+      <td align="center">umask</td>
+    </tr>
+  </table>
+</div>
 
 ### Summarize of Function Call Parameters
 
 You will get a basic score if you only print out the raw value of monitored function calls. For example, the primitive data types **char**, **int**, **short**, **long**, **long long**, **float**, and **double**. For pointers, you can also print out its raw values. If you would like to get higher scores, here are additional requirements.
 
-- For **char *** data type, you can print it out as a string.
-- For file descriptors (passed as an **int**), **FILE***, and **DIR*** pointers, you can convert them to corresponding file names.
-- For **char *** arrays, print out the first few strings in the array.
+- For **char \*** data type, you can print it out as a string.
+- For file descriptors (passed as an **int**), **FILE \***, and **DIR \*** pointers, you can convert them to corresponding file names.
+- For **char \*** arrays, print out the first few strings in the array.
 - For uid and gid (also passed as an **int**), convert them to the corresponding user name and group name.
 - For **struct stat** or its pointer, retrieve meaningful information from the structure. For example, file type, file size, and permissions.
 
