@@ -38,13 +38,19 @@ void Command::execute()
 
     Command::closeAllPipes();
 
-    // convert string to char**
-    char **cmd = new char*[this->command.size() + 1];
+    // convert string to char ** and do word expansion
+    vector <char *> cmd;
     for(int i = 0; i < this->command.size(); i++) {
-        cmd[i] = new char(this->command[i].size());
-        cmd[i] = (char *) this->command[i].c_str();
+        wordexp_t p;
+        char **w;
+
+        wordexp(this->command[i].c_str(), &p, 0);
+        w = p.we_wordv;
+        for (int j = 0; j < p.we_wordc; j++)
+            cmd.push_back(strdup(w[j]));
+        wordfree(&p);
     }
-    cmd[this->command.size()] = NULL;
+    cmd.push_back(NULL);
 
     if(execvp(cmd[0], &cmd[0]) < 0) {
         cerr << cmd[0] << ": command not found" << endl;
