@@ -124,11 +124,11 @@ int main(int argc, char *argv[])
 //            job[i].log();
 //        cout << "======================================================" << endl;
 
-        // execute command
+        // execute command and set process group
+        pid_t pgid;
         for(int i = 0; i < job.size(); i++)
         {
             pid_t pid = fork();
-            pid_t pgid;
 
             // first command of the pipeline will be the pgid
             if(i == 0)
@@ -138,23 +138,24 @@ int main(int argc, char *argv[])
                 setpgid(0, pgid);
                 job[i].execute();
             }
-            else
-            {
+            else {
                 setpgid(pid, pgid);
-                // make child process become the foreground process
-                signal(SIGTTOU, SIG_IGN);
-                tcsetpgrp(STDIN_FILENO, pid);
             }
         }
+
+        // make child process become the foreground process
+        signal(SIGTTOU, SIG_IGN);
+        tcsetpgrp(STDIN_FILENO, pgid);
 
         // parent close all pipes
         Command::closeAllPipes();
 
         // parent wait for child
         for(int i = 0; i < job.size(); i++) {
-            int status;
+            int status = 0;
             wait(&status);
         }
+
         // parent become foreground process
         tcsetpgrp(STDIN_FILENO, getpid());
         signal(SIGTTOU, SIG_DFL);
