@@ -1,7 +1,10 @@
 CXX = g++
-CFLAGS = --std=c++11
+CXXFLAGS = -std=c++11
 
-ALL:
-	$(CXX) $(CFLAGS) Command.cpp shell.cpp -o shell
+shell: shell.o command.o builtins.o job.o
+	$(CXX) $(CXXFLAGS) $^ -o $@
+%.o: %.cpp %.h
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 clean:
-	rm -f shell
+	rm *.o
+	rm shell

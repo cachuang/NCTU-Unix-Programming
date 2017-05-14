@@ -1,5 +1,5 @@
-#ifndef UNTITLED_COMMAND_H
-#define UNTITLED_COMMAND_H
+#ifndef COMMAND_H
+#define COMMAND_H
 
 #include <iostream>
 #include <string>
@@ -14,19 +14,23 @@ using namespace std;
 class Command
 {
 public:
+    friend ostream& operator << (ostream& os, const Command& cmd);
+
     Command();
     void execute();
-    void log();
     static void closeAllPipes();
 
     int readfd;
     int writefd;
+    int pid;
+    int pgid;
     bool redirect_input;
     bool redirect_output;
+    string status;
     string redirect_input_file;
     string redirect_output_file;
-    vector <string> command;
+    vector <string> cmdline;
     static vector <int> pipes;
 };
 
-#endif //UNTITLED_COMMAND_H
+#endif // COMMAND_H
