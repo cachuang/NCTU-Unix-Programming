@@ -19,5 +19,6 @@ void unset(const char *name);
 void jobs();
 void fg();
 void bg();
+void cd(const char *path);
 
 #endif // BUILTINS_H

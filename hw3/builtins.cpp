@@ -106,3 +106,9 @@ void bg()
     else
         cout << "bg: job already running in background" << endl;
 }
+
+void cd(const char *path)
+{
+    if (chdir(path) < 0)
+        perror("cd");
+}

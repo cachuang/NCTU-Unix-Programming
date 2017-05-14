@@ -129,14 +129,14 @@ void printJob(int index)
     {
         if (index == 0 || job.index == index)
         {
-            printf("[%d] %c ", job.index, job.index == current_job_index ? '+' :
+            printf("[%d]  %c ", job.index, job.index == current_job_index ? '+' :
                                           job.index == previous_job_index ? '-' : ' ');
 
             for (int i = 0; i < job.commands.size(); i++)
             {
                 if (i != 0) cout << "      ";
 
-                printf("%d %-10s", job.commands[i].pid, job.commands[i].status.c_str());
+                printf("%d %-11s", job.commands[i].pid, job.commands[i].status.c_str());
                 cout << job.commands[i] << endl;
             }
         }

@@ -13,6 +13,8 @@ using namespace std;
 
 #define PROMPT "shell-prompt$ "
 
+bool isWaitingInput = true;
+
 void sigchld_handler(int signal)
 {
     int jobIndex;
@@ -23,11 +25,16 @@ void sigchld_handler(int signal)
         if ((jobIndex = processDone(pid)) > 0)
         {
             // Job done
-            cout << endl;
-            printJob(jobIndex);
-            cout << PROMPT;
-            fflush(stdout);
+            if(isWaitingInput) 
+            {
+                cout << endl;
+                printJob(jobIndex);
+                cout << PROMPT;
+            }
+            else
+                printJob(jobIndex);
 
+            fflush(stdout);
             removeJob(jobIndex);
         }
 
@@ -46,14 +53,18 @@ int main(int argc, char *argv[])
 
     while (true)
     {
-        bool redirect_input = false, redirect_output = false, background = false, builtin = false;
+        bool redirect_input = false, redirect_output = false, background = false;
         string redirect_input_file, redirect_output_file, str;
         vector <string> input;
         vector <string> command;
         Job job;
 
-        cout << PROMPT;
+        if(isWaitingInput) {
+            isWaitingInput = false;
+            cout << PROMPT;
+        }
 
+        // EOF
         if(!getline(cin, line))
             break;
 
@@ -67,18 +78,23 @@ int main(int argc, char *argv[])
         // parse input
         for (int i = 0; i < input.size(); i++)
         {
-            if (input[i] == "exit") {
+            if (input[i] == "exit") 
+            {
                 exit(0);
             }
-            else if (input[i] == "printenv") {
-                builtin = true;
+            if (input[i] == "cd") 
+            {
+                cd(input[++i].c_str());
+            }
+            else if (input[i] == "printenv") 
+            {
                 if(input.size() == 3)
                     printenv(input[++i].c_str());
                 else if(input.size() == 2)
                     printenv();
             }
-            else if (input[i] == "export") {
-                builtin = true;
+            else if (input[i] == "export") 
+            {
                 string str = input[++i];
                 size_t pos = str.find("=");
                 string name = str.substr(0, pos);
@@ -86,33 +102,36 @@ int main(int argc, char *argv[])
 
                 exportenv(name.c_str(), value.c_str());
             }
-            else if (input[i] == "unset") {
-                builtin = true;
+            else if (input[i] == "unset") 
+            {
                 unset(input[++i].c_str());
             }
-            else if (input[i] == "jobs") {
-                builtin = true;
+            else if (input[i] == "jobs") 
+            {
                 jobs();
             }
-            else if (input[i] == "fg") {
-                builtin = true;
+            else if (input[i] == "fg") 
+            {
                 fg();
             }
-            else if (input[i] == "bg") {
-                builtin = true;
+            else if (input[i] == "bg") 
+            {
                 bg();
             }
-            else if (input[i] == "|" || input[i] == "") {
+            else if (input[i] == "|" || input[i] == "") 
+            {
                 Command cmd;
 
                 cmd.cmdline = command;
 
-                if (redirect_input) {
+                if (redirect_input) 
+                {
                     cmd.redirect_input = true;
                     cmd.redirect_input_file = redirect_input_file;
                 }
 
-                if (redirect_output) {
+                if (redirect_output) 
+                {
                     cmd.redirect_output = true;
                     cmd.redirect_output_file = redirect_output_file;
                 }
@@ -123,24 +142,25 @@ int main(int argc, char *argv[])
                 redirect_input = redirect_output = false;
                 command.clear();
             }
-            else if (input[i] == "<") {
+            else if (input[i] == "<") 
+            {
                 redirect_input = true;
                 redirect_input_file = input[++i];
             }
-            else if (input[i] == ">") {
+            else if (input[i] == ">") 
+            {
                 redirect_output = true;
                 redirect_output_file = input[++i];
             }
-            else if (input[i] == "&") {
+            else if (input[i] == "&") 
+            {
                 background = true;
             }
-            else {
+            else 
+            {
                 command.push_back(input[i]);
             }
         }
-
-        if(builtin)
-            continue;
 
         // set up pipes
         if (job.commands.size() > 1)
@@ -217,6 +237,9 @@ int main(int argc, char *argv[])
                     job.remain_command_count = job.commands.size() - i;
                     addJob(job);
 
+                    cout << endl;
+                    printJob(current_job->index);
+
                     break;
                 }
             }
@@ -233,6 +256,8 @@ int main(int argc, char *argv[])
             addJob(job);
             printLastJobPid();
         }
+
+        isWaitingInput = true;
     }
 
     return 0;
