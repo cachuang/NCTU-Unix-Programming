@@ -59,14 +59,13 @@ int main(int argc, char *argv[])
         vector <string> command;
         Job job;
 
-        if(isWaitingInput) {
-            isWaitingInput = false;
+        if(isWaitingInput) 
             cout << PROMPT;
-        }
 
         // EOF
         if(!getline(cin, line))
             break;
+        isWaitingInput = false;
 
         stringstream ss(line);
         while (ss >> str)
