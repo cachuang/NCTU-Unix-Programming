@@ -375,7 +375,8 @@ int main(int argc, char **argv)
 {
     if ((argc < 2) || (strcmp(argv[1], "-c") && strcmp(argv[1], "-s")))
     {
-        printf("Usage: ./othello -s|-c\n");
+        printf("Run as server: ./othello -s [port]\n");
+        printf("Run as client: ./othello -c [hostname | ip_address] [port]\n");
         exit(0);
     }
     else if (!strcmp(argv[1], "-s"))
@@ -391,7 +392,7 @@ int main(int argc, char **argv)
     {
         if(argc < 4)
         {
-            printf("Usage: ./othello -c <ip_address> <port>\n");
+            printf("Usage: ./othello -c [hostname | ip_address] [port]\n");
             exit(0);
         }
         sockfd = client_mode(argv[2], atoi(argv[3]));
