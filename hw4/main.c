@@ -7,6 +7,11 @@
 #include <stdbool.h>
 
 #define MAXLINE 1024
+#define COMPUTER_DELAY 1
+
+extern int suggest_x;
+extern int suggest_y;
+extern int direction;
 
 static int width;
 static int height;
@@ -16,6 +21,8 @@ static int sockfd;
 int player;
 int opponent;
 bool myturn;
+bool computer_mode = false;
+bool skipped = false;
 
 int client_mode(char *ip, int port)
 {
@@ -101,10 +108,141 @@ void change_turn()
     }
 }
 
+bool isValidMove(int _x, int _y, int replace)
+{
+    int x, y;
+
+    // check top
+    x = _x; y = _y;
+    while(--y >= 0) {
+        if (board[y][x] == 0)
+            break;
+        if (board[y][x] == replace) {
+            for (y = y+1; y < _y; y++) {
+                direction = 1;
+                return true;
+            }
+            break;
+        }
+    }
+    // check bottom
+    x = _x; y = _y;
+    while(++y < BOARDSZ) {
+        if (board[y][x] == 0)
+            break;
+        if (board[y][x] == replace) {
+            for (y = y-1; y > _y; y--) {
+                direction = 2;
+                return true;
+            }
+            break;
+        }
+    }
+    // check left
+    x = _x; y = _y;
+    while(--x >= 0) {
+        if (board[y][x] == 0)
+            break;
+        if (board[y][x] == replace) {
+            for (x = x+1; x < _x; x++) {
+                direction = 3;
+                return true;
+            }
+            break;
+        }
+    }
+    // check right
+    x = _x; y = _y;
+    while(++x < BOARDSZ) {
+        if (board[y][x] == 0)
+            break;
+        if (board[y][x] == replace) {
+            for (x = x-1; x > _x; x--) {
+                direction = 4;
+                return true;
+            }
+            break;
+        }
+    }
+    // check top left
+    x = _x; y = _y;
+    while(--x >= 0 && --y >= 0) {
+        if (board[y][x] == 0)
+            break;
+        if (board[y][x] == replace) {
+            for (x = x+1, y = y+1; (x < _x && y < _y); x++, y++) {
+                direction = 5;
+                return true;
+            }
+            break;
+        }
+    }
+    // check top right
+    x = _x; y = _y;
+    while(++x < BOARDSZ && --y >= 0) {
+        if (board[y][x] == 0)
+            break;
+        if (board[y][x] == replace) {
+            for (x = x-1, y = y+1; (x > _x && y < _y); x--, y++) {
+                direction = 6;
+                return true;
+            }
+            break;
+        }
+    }
+    // check bottom left
+    x = _x; y = _y;
+    while(--x >= 0 && ++y < BOARDSZ) {
+        if (board[y][x] == 0)
+            break;
+        if (board[y][x] == replace) {
+            for (x = x + 1, y = y - 1; (x < _x && y > _y); x++, y--) {
+                direction = 7;
+                return true;
+            }
+            break;
+        }
+    }
+    // check bottom right
+    x = _x; y = _y;
+    while(++x < BOARDSZ && ++y < BOARDSZ) {
+        if (board[y][x] == 0)
+            break;
+        if (board[y][x] == replace) {
+            for (x = x-1, y = y-1; (x > _x && y > _y); x--, y--) {
+                direction = 8;
+                return true;
+            }
+            break;
+        }
+    }
+
+    return false;
+}
+
+bool hasValidMove(int replace)
+{
+    for (int i = 0; i < BOARDSZ; i++)
+        for (int j = 0; j < BOARDSZ; j++) {
+            if (board[j][i] == 0 && isValidMove(i, j, replace)) {
+                suggest_x = j;
+                suggest_y = i;
+                return true;
+            }
+        }
+
+    return false;
+}
+
 bool update_board(int _x, int _y, int replace)
 {
     int x, y;
     bool updated = false;
+
+    for (int i = 0; i < BOARDSZ; i++)
+        for (int j = 0; j < BOARDSZ; j++)
+            prev_board[i][j] = board[i][j];
+    prev_board[_y][_x] = 0;
 
     // check top
     x = _x; y = _y;
@@ -217,9 +355,15 @@ bool update_board(int _x, int _y, int replace)
     return updated;
 }
 
+void game_over()
+{
+    draw_message("Game Over                     ", 0);
+    refresh();
+}
+
 void game_start()
 {
-    fd_set rset;
+    fd_set rset, wset;
     char message[MAXLINE];
 
     initscr();			                // start curses mode
@@ -242,6 +386,10 @@ void game_start()
     draw_score();
     refresh();
 
+//    WINDOW *win = newwin(10, 37, height/2 - 5, 0);
+//    box(win,'|','-');
+//    wrefresh(win);
+
     attron(A_BOLD);
     move(height-1, 0);
     printw("Arrow keys: move; Space/Enter: put; Q: quit");
@@ -249,6 +397,7 @@ void game_start()
     refresh();
 
     FD_ZERO(&rset);
+    FD_ZERO(&wset);
 
     if (myturn) {
         snprintf(message, sizeof(message), "Player #%d %s: It's your turn      ", player == PLAYER1 ? 1 : 2,
@@ -266,9 +415,38 @@ void game_start()
     {
         FD_SET(STDIN_FILENO, &rset);
         FD_SET(sockfd, &rset);
+        FD_SET(sockfd, &wset);
 
-        select(sockfd+1, &rset, NULL, NULL, NULL);
+        select(sockfd+1, &rset, &wset, NULL, NULL);
 
+        if (FD_ISSET(sockfd, &wset) && computer_mode && myturn)
+        {
+            for (int i = 0; i < BOARDSZ; i++)
+            {
+                bool moved = false;
+                for (int j = 0; j < BOARDSZ; j++)
+                {
+                    if (board[i][j] == 0 && isValidMove(j, i, player))
+                    {
+                        sleep(COMPUTER_DELAY);
+
+                        board[i][j] = player;
+                        draw_cursor(j, i, 1);
+                        draw_score();
+                        update_board(j, i, player);
+                        change_turn();
+                        refresh();
+
+                        snprintf(message, sizeof(message), "put %d %d", j, i);
+                        write(sockfd, message, strlen(message));
+                        moved = true;
+                        break;
+                    }
+                }
+                if (moved)
+                    break;
+            }
+        }
         if (FD_ISSET(sockfd, &rset))
         {
             int n = read(sockfd, message, MAXLINE);
@@ -281,17 +459,36 @@ void game_start()
             }
             message[n] = 0;
 
-            if (!strncmp(message, "put", 3))
-            {
+            if (!strncmp(message, "put", 3)) {
                 int x, y;
 
                 sscanf(message, "%*s %d %d", &x, &y);
                 board[y][x] = opponent;
                 draw_cursor(x, y, 0);
-                draw_score();
                 update_board(x, y, opponent);
+                draw_score();
+
+                if (hasValidMove(player)) {
+                    skipped = false;
+                    draw_score();
+                }
+                else {
+                    draw_message("No more move ...                    ", 0);
+
+                    char message[] = "skip";
+                    write(sockfd, message, sizeof(message));
+                }
+
                 change_turn();
                 refresh();
+            }
+            else if (!strcmp(message, "skip"))
+            {
+                if (!hasValidMove(player)) {
+                    game_over();
+                    char message[] = "skip";
+                    write(sockfd, message, sizeof(message));
+                }
             }
         }
         if (FD_ISSET(0, &rset))
@@ -308,19 +505,29 @@ void game_start()
                     if (myturn)
                     {
                         // prevent from overwriting existing piece
-                        if(board[cy][cx] != 0 || !update_board(cx, cy, player))
+                        if(board[cy][cx] != 0 || !isValidMove(cx, cy, player))
                             break;
 
                         board[cy][cx] = player;
                         draw_cursor(cx, cy, 1);
                         draw_score();
-                        //update_board(cx, cy, player);
+                        update_board(cx, cy, player);
                         change_turn();
                         refresh();
 
                         snprintf(message, sizeof(message), "put %d %d", cx, cy);
                         write(sockfd, message, sizeof(message));
                     }
+                    break;
+                case 'r':
+                case 'R':
+                    draw_prev_board();
+                    refresh();
+                    break;
+                case 'c':
+                case 'C':
+                    draw_board();
+                    refresh();
                     break;
                 case 'q':
                 case 'Q':
@@ -373,10 +580,11 @@ quit:
 
 int main(int argc, char **argv)
 {
-    if ((argc < 2) || (strcmp(argv[1], "-c") && strcmp(argv[1], "-s")))
+    if ((argc < 2) || (strcmp(argv[1], "-c") && strcmp(argv[1], "-s") && strcmp(argv[1], "-i")))
     {
         printf("Run as server: ./othello -s [port]\n");
         printf("Run as client: ./othello -c [hostname | ip_address] [port]\n");
+        printf("Run as computer: ./othello -i [port]\n");
         exit(0);
     }
     else if (!strcmp(argv[1], "-s"))
@@ -386,6 +594,18 @@ int main(int argc, char **argv)
             printf("Usage: ./othello -s <port>\n");
             exit(0);
         }
+
+        sockfd = server_mode(atoi(argv[2]));
+    }
+    else if (!strcmp(argv[1], "-i"))
+    {
+        if(argc < 3)
+        {
+            printf("Usage: ./othello -i <port>\n");
+            exit(0);
+        }
+
+        computer_mode = true;
         sockfd = server_mode(atoi(argv[2]));
     }
     else if (!strcmp(argv[1], "-c"))
