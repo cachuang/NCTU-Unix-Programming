@@ -106,7 +106,8 @@ draw_box(int x, int y, int ch, int color, int highlight) {
 void
 draw_message(const char *msg, int highlight) {
 	move(0, 0);
-	attron(highlight ? A_BLINK : A_NORMAL);
+    clrtoeol();
+    attron(highlight ? A_BLINK : A_NORMAL);
 	attron(COLOR_PAIR(highlight ? colormsgwarn : colormsgok));
 	printw(msg);
 	attroff(COLOR_PAIR(highlight ? colormsgwarn : colormsgok));

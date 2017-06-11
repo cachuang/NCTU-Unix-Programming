@@ -1,6 +1,6 @@
 CC	= gcc
 CFLAGS	= -Wall -g -I/usr/include/ncurses
-LDFLAGS	= -lncurses -pthread
+LDFLAGS	= -lncurses
 PROGS	= othello
 
 all: $(PROGS)
