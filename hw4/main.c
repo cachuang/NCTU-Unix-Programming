@@ -289,9 +289,6 @@ void update_board(int _x, int _y, int replace)
 {
     int x, y;
 
-    memcpy(old_board, board, sizeof(int) * BOARDSZ * BOARDSZ);
-    old_board[_y][_x] = 0;
-
     // check top
     x = _x; y = _y;
     while (--y >= 0) {
@@ -594,16 +591,6 @@ void game_start()
                         snprintf(message, sizeof(message), "put %d %d", cx, cy);
                         write(sockfd, message, sizeof(message));
                     }
-                    break;
-                case 'r':
-                case 'R':
-                    draw_old_board();
-                    refresh();
-                    break;
-                case 'c':
-                case 'C':
-                    draw_board();
-                    refresh();
                     break;
                 case 'q':
                 case 'Q':
