@@ -419,7 +419,7 @@ void computer_move()
 
 void quit()
 {
-    WINDOW *win = newwin(9, 37, height/2 - 4, 0);
+    WINDOW *win = newwin(9, 37, 5, 0);
     int answer = draw_yes_no_box(win, "Are you sure you want to quit?");
 
     if (answer == 1) {

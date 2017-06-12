@@ -4,7 +4,6 @@
 #define	PLAYER2SYM	('X')
 
 int board[BOARDSZ][BOARDSZ];
-int old_board[BOARDSZ][BOARDSZ];
 
 static int const box_top = 1;
 static int const box_left = 2;
@@ -59,13 +58,6 @@ BCH(int x, int y) {
 	if(board[y][x] == PLAYER1) return PLAYER1SYM|COLOR_PAIR(colorplayer1);
 	if(board[y][x] == PLAYER2) return PLAYER2SYM|COLOR_PAIR(colorplayer2);
 	return ' ';
-}
-
-static chtype
-BCH2(int x, int y) {
-    if(old_board[y][x] == PLAYER1) return PLAYER1SYM|COLOR_PAIR(colorplayer1);
-    if(old_board[y][x] == PLAYER2) return PLAYER2SYM|COLOR_PAIR(colorplayer2);
-    return ' ';
 }
 
 static void
@@ -126,17 +118,6 @@ draw_board() {
 		}
 	}
 	return;
-}
-
-void
-draw_old_board() {
-    int i, j;
-    for(i = 0; i < BOARDSZ; i++) {
-        for(j = 0; j < BOARDSZ; j++) {
-            draw_box(i, j, BCH2(i, j), colorborder, 0);
-        }
-    }
-    return;
 }
 
 void
