@@ -1,18 +1,14 @@
-#include "othello.h"
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <sys/select.h>
+#include <netdb.h>
 #include <errno.h>
-#include <stdbool.h>
-#include <menu.h>
+
+#include "othello.h"
 
 #define MAXLINE 1024
 #define COMPUTER_DELAY 1
-
-extern int suggest_x;
-extern int suggest_y;
-extern int direction;
 
 static int width;
 static int height;
@@ -29,22 +25,24 @@ int client_mode(char *ip, int port)
 {
     int sockfd;
     struct sockaddr_in server_addr;
+    struct hostent *hptr;
 
-    memset(&server_addr, sizeof(server_addr), 0);
+    memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(port);
+
+    if( (hptr = gethostbyname(ip)) == NULL ) {
+        perror("gethostbyname error");
+        exit(errno);
+    }
+    server_addr.sin_addr = *(struct in_addr *)(hptr->h_addr);
 
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("socket error");
         exit(errno);
     }
 
-    if (inet_pton(AF_INET, ip, &server_addr.sin_addr) <= 0) {
-        perror("inet_pton error");
-        exit(errno);
-    }
-
-    if (connect(sockfd, (struct sockaddr *) &server_addr, sizeof(server_addr) ) < 0) {
+    if (connect(sockfd, (struct sockaddr *) &server_addr, sizeof(server_addr)) < 0) {
         perror("connect error");
         exit(errno);
     }
@@ -62,7 +60,7 @@ int server_mode(int port)
     struct sockaddr_in server_addr, clientaddr;
     socklen_t len;
 
-    memset(&server_addr, sizeof(server_addr), 0);
+    memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(port);
     server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -105,12 +103,69 @@ void draw_title()
     }
 }
 
+// return 1 for yes, 0 for no
+int draw_yes_no_box(WINDOW *win, char *message)
+{
+    int select = 1;
+    int height, width;
+
+    getmaxyx(win, height, width);
+
+    box(win, 0, 0);
+    mvwprintw(win, height/3, width/2 - strlen(message)/2, "%s", message);
+    wattron(win, A_REVERSE);
+    mvwprintw(win, height-2, width/2-6, "%s", "Yes");
+    wattroff(win, A_REVERSE);
+    mvwprintw(win, height-2, width/2+2, "%s", "No");
+    wrefresh(win);
+
+    while (true)
+    {
+        int ch = getch();
+
+        switch (ch)
+        {
+            case 'h':
+            case KEY_LEFT:
+                if(select == 0) {
+                    wattron(win, A_REVERSE);
+                    mvwprintw(win, height-2, width/2-6, "%s", "Yes");
+                    wattroff(win, A_REVERSE);
+                    mvwprintw(win, height-2, width/2+2, "%s", "   ");
+                    mvwprintw(win, height-2, width/2+2, "%s", "No");
+                    select = 1;
+                }
+                break;
+            case 'l':
+            case KEY_RIGHT:
+                if(select != 0) {
+                    wattron(win, A_REVERSE);
+                    mvwprintw(win, height-2, width/2+2, "%s", "No");
+                    wattroff(win, A_REVERSE);
+                    mvwprintw(win, height-2, width/2-6, "%s", "Yes");
+                    select = 0;
+                }
+                break;
+            case ' ':
+            case 0x0d:
+            case 0x0a:
+            case KEY_ENTER:
+                wborder(win, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
+                wrefresh(win);
+                delwin(win);
+                draw_board();
+                refresh();
+
+                return select;
+        }
+        wrefresh(win);
+    }
+}
+
 void change_turn()
 {
     myturn = !myturn;
     draw_title();
-
-    refresh();
 }
 
 bool isValidMove(int _x, int _y, int replace)
@@ -124,7 +179,6 @@ bool isValidMove(int _x, int _y, int replace)
             break;
         if (board[y][x] == replace) {
             for (y = y+1; y < _y; y++) {
-                direction = 1;
                 return true;
             }
             break;
@@ -137,7 +191,6 @@ bool isValidMove(int _x, int _y, int replace)
             break;
         if (board[y][x] == replace) {
             for (y = y-1; y > _y; y--) {
-                direction = 2;
                 return true;
             }
             break;
@@ -150,7 +203,6 @@ bool isValidMove(int _x, int _y, int replace)
             break;
         if (board[y][x] == replace) {
             for (x = x+1; x < _x; x++) {
-                direction = 3;
                 return true;
             }
             break;
@@ -163,7 +215,6 @@ bool isValidMove(int _x, int _y, int replace)
             break;
         if (board[y][x] == replace) {
             for (x = x-1; x > _x; x--) {
-                direction = 4;
                 return true;
             }
             break;
@@ -176,7 +227,6 @@ bool isValidMove(int _x, int _y, int replace)
             break;
         if (board[y][x] == replace) {
             for (x = x+1, y = y+1; (x < _x && y < _y); x++, y++) {
-                direction = 5;
                 return true;
             }
             break;
@@ -189,7 +239,6 @@ bool isValidMove(int _x, int _y, int replace)
             break;
         if (board[y][x] == replace) {
             for (x = x-1, y = y+1; (x > _x && y < _y); x--, y++) {
-                direction = 6;
                 return true;
             }
             break;
@@ -202,7 +251,6 @@ bool isValidMove(int _x, int _y, int replace)
             break;
         if (board[y][x] == replace) {
             for (x = x + 1, y = y - 1; (x < _x && y > _y); x++, y--) {
-                direction = 7;
                 return true;
             }
             break;
@@ -215,7 +263,6 @@ bool isValidMove(int _x, int _y, int replace)
             break;
         if (board[y][x] == replace) {
             for (x = x-1, y = y-1; (x > _x && y > _y); x--, y--) {
-                direction = 8;
                 return true;
             }
             break;
@@ -227,14 +274,13 @@ bool isValidMove(int _x, int _y, int replace)
 
 bool hasValidMove(int replace)
 {
-    for (int i = 0; i < BOARDSZ; i++)
+    for (int i = 0; i < BOARDSZ; i++) {
         for (int j = 0; j < BOARDSZ; j++) {
             if (board[i][j] == 0 && isValidMove(j, i, replace)) {
-                suggest_x = j;
-                suggest_y = i;
                 return true;
             }
         }
+    }
 
     return false;
 }
@@ -243,8 +289,8 @@ void update_board(int _x, int _y, int replace)
 {
     int x, y;
 
-    memcpy(prev_board, board, sizeof(int) * BOARDSZ * BOARDSZ);
-    prev_board[_y][_x] = 0;
+    memcpy(old_board, board, sizeof(int) * BOARDSZ * BOARDSZ);
+    old_board[_y][_x] = 0;
 
     // check top
     x = _x; y = _y;
@@ -371,65 +417,6 @@ void computer_move()
     }
 }
 
-// return 1 for yes, 0 for no
-int draw_yes_no_box(WINDOW *win, char *message)
-{
-    int select = 1;
-    int height, width;
-
-    getmaxyx(win, height, width);
-
-    box(win, 0, 0);
-    mvwprintw(win, height/3, width/2 - strlen(message)/2, "%s", message);
-    wattron(win, A_REVERSE);
-    mvwprintw(win, height-2, width/2-6, "%s", "Yes");
-    wattroff(win, A_REVERSE);
-    mvwprintw(win, height-2, width/2+2, "%s", "No");
-    wrefresh(win);
-
-    while (true)
-    {
-        int ch = getch();
-
-        switch (ch)
-        {
-            case 'h':
-            case KEY_LEFT:
-                if(select == 0) {
-                    wattron(win, A_REVERSE);
-                    mvwprintw(win, height-2, width/2-6, "%s", "Yes");
-                    wattroff(win, A_REVERSE);
-                    mvwprintw(win, height-2, width/2+2, "%s", "   ");
-                    mvwprintw(win, height-2, width/2+2, "%s", "No");
-                    select = 1;
-                }
-                break;
-            case 'l':
-            case KEY_RIGHT:
-                if(select != 0) {
-                    wattron(win, A_REVERSE);
-                    mvwprintw(win, height-2, width/2+2, "%s", "No");
-                    wattroff(win, A_REVERSE);
-                    mvwprintw(win, height-2, width/2-6, "%s", "Yes");
-                    select = 0;
-                }
-                break;
-            case ' ':
-            case 0x0d:
-            case 0x0a:
-            case KEY_ENTER:
-                wborder(win, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
-                wrefresh(win);
-                delwin(win);
-                draw_board();
-                refresh();
-
-                return select;
-        }
-        wrefresh(win);
-    }
-}
-
 void quit()
 {
     WINDOW *win = newwin(9, 37, height/2 - 4, 0);
@@ -519,8 +506,7 @@ void game_start()
             ssize_t n = read(sockfd, message, MAXLINE);
             message[n] = 0;
 
-            if (n == 0)
-            {
+            if (n == 0) {
                 endwin();
                 printf("Peer has closed the connection.\n");
                 exit(0);
@@ -536,13 +522,28 @@ void game_start()
                 update_board(x, y, opponent);
                 draw_board();
                 draw_score();
+                change_turn();
 
-                if (hasValidMove(player))
-                    change_turn();
-                else
+                if (!hasValidMove(player))
                 {
-                    draw_message("No valid move, press any key to skip ...", 0);
-                    getch();
+                    if (!hasValidMove(opponent))
+                        game_over();
+                    else {
+                        if (computer_mode) {
+                            draw_message("No valid move ...", 0);
+                            refresh();
+                            sleep(COMPUTER_DELAY);
+                        }
+                        else {
+                            draw_message("No valid move, press 's' to skip ...", 0);
+                            while (true) {
+                                int c = getch();
+                                if (c == 's') break;
+                            }
+                        }
+
+                        change_turn();
+                    }
 
                     char message[] = "skip";
                     write(sockfd, message, sizeof(message));
@@ -561,6 +562,8 @@ void game_start()
                     char message[] = "skip";
                     write(sockfd, message, sizeof(message));
                 }
+
+                refresh();
             }
         }
         if (FD_ISSET(0, &rset))
@@ -594,7 +597,7 @@ void game_start()
                     break;
                 case 'r':
                 case 'R':
-                    draw_prev_board();
+                    draw_old_board();
                     refresh();
                     break;
                 case 'c':

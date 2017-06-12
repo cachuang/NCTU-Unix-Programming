@@ -4,11 +4,7 @@
 #define	PLAYER2SYM	('X')
 
 int board[BOARDSZ][BOARDSZ];
-int prev_board[BOARDSZ][BOARDSZ];
-
-int suggest_x = 0;
-int suggest_y = 0;
-int direction = 0;
+int old_board[BOARDSZ][BOARDSZ];
 
 static int const box_top = 1;
 static int const box_left = 2;
@@ -67,8 +63,8 @@ BCH(int x, int y) {
 
 static chtype
 BCH2(int x, int y) {
-    if(prev_board[y][x] == PLAYER1) return PLAYER1SYM|COLOR_PAIR(colorplayer1);
-    if(prev_board[y][x] == PLAYER2) return PLAYER2SYM|COLOR_PAIR(colorplayer2);
+    if(old_board[y][x] == PLAYER1) return PLAYER1SYM|COLOR_PAIR(colorplayer1);
+    if(old_board[y][x] == PLAYER2) return PLAYER2SYM|COLOR_PAIR(colorplayer2);
     return ' ';
 }
 
@@ -133,7 +129,7 @@ draw_board() {
 }
 
 void
-draw_prev_board() {
+draw_old_board() {
     int i, j;
     for(i = 0; i < BOARDSZ; i++) {
         for(j = 0; j < BOARDSZ; j++) {
@@ -162,8 +158,6 @@ draw_score() {
 	printw("Player #2 ");
 	addch(PLAYER2SYM|COLOR_PAIR(colorplayer2));
 	printw(" : %d", black);
-    move(box_top+7, box_left + 4*BOARDSZ + 10);
-    printw("Suggest Move: %d %d (%d)", suggest_x, suggest_y, direction);
 	attroff(A_BOLD);
 	return;
 }

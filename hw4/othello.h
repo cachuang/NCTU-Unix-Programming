@@ -12,18 +12,15 @@
 #define	PLAYER2		-1
 
 extern int board[BOARDSZ][BOARDSZ];
-extern int prev_board[BOARDSZ][BOARDSZ];
-extern int suggest_x;
-extern int suggest_y;
-extern int direction;
+extern int old_board[BOARDSZ][BOARDSZ];
 
 void init_board();
 void init_colors();
 
 void draw_message(const char *msg, int highlight);
 void draw_cursor(int x, int y, int hide);
-void draw_prev_board();
 void draw_board();
+void draw_old_board();
 void draw_score();
 
 #endif	/* __OTHELLO_H__ */
